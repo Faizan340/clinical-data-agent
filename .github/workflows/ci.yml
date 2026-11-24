@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test-and-eval:
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_DB_URL: postgresql://admin:admin@localhost:5440/clinical
+      AGENT_DB_URL: postgresql://analyst_ro:analyst_ro@localhost:5440/clinical
+      REDIS_URL: redis://localhost:6390/0
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: docker compose up -d --wait
+      - run: pip install -r requirements.txt
+      - run: python data/generate_synthetic.py --patients 1200
+      - name: Unit tests (guardrails, scoring)
+        run: python -m pytest -q
+      - name: Evals (needs GEMINI_API_KEY secret)
+        if: env.GEMINI_API_KEY != ''
+        env:
+          EVAL_MIN_ACCURACY: "0.7"
+        run: python -m evals.run_evals
+      - name: Publish eval report
+        if: always() && env.GEMINI_API_KEY != ''
+        run: cat evals/report.md >> "$GITHUB_STEP_SUMMARY"

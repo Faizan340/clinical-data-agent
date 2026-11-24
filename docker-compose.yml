@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cda-postgres
+    environment:
+      POSTGRES_DB: clinical
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5440:5432"   # 5432/5433 are already taken on the dev machine
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d clinical"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7
+    container_name: cda-redis
+    ports:
+      - "6390:6379"   # 6379 is already taken on the dev machine
+
+volumes:
+  pgdata:

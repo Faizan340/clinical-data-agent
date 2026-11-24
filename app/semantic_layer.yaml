@@ -1,0 +1,36 @@
+# Business definitions the agent MUST use instead of inventing its own logic.
+# Edit these to change how the agent interprets clinical terms.
+
+conventions:
+  - "'Patients' means living patients (deceased_date IS NULL) unless the question says otherwise."
+  - "Age in years = date_part('year', age(birth_date)). 'Over 60' means age > 60."
+  - "'Today' is CURRENT_DATE. 'Last N months' means effective_date/start_date >= CURRENT_DATE - INTERVAL 'N months'."
+  - "A condition is active when abatement_date IS NULL."
+  - "Always count patients with COUNT(DISTINCT patient_id) or COUNT(DISTINCT p.id)."
+
+column_values:   # exact stored values for categorical columns; use these literally in filters
+  patients.gender: ["male", "female"]
+  encounters.encounter_class: ["wellness", "ambulatory", "emergency", "inpatient"]
+
+codes:
+  diabetes_type_2: {system: SNOMED, code: "44054006"}
+  prediabetes:     {system: SNOMED, code: "15777000"}
+  hypertension:    {system: SNOMED, code: "38341003"}
+  ckd_stage_3:     {system: SNOMED, code: "433144002"}
+  asthma:          {system: SNOMED, code: "195967001"}
+  hba1c:           {system: LOINC,  code: "4548-4", unit: "%"}
+  bmi:             {system: LOINC,  code: "39156-5", unit: "kg/m2"}
+  systolic_bp:     {system: LOINC,  code: "8480-6", unit: "mm[Hg]"}
+
+definitions:
+  diabetic_patient: "Living patient with an active diabetes_type_2 condition. 'Diabetes' alone means type 2 in this dataset."
+  latest_hba1c: "The patient's most recent hba1c observation by effective_date."
+  controlled_diabetes: "Diabetic patient whose latest_hba1c < 7."
+  uncontrolled_diabetes: "Diabetic patient whose latest_hba1c >= 9."
+  hba1c_care_gap: "Diabetic patient with no hba1c observation in the last 6 months."
+  emergency_visit: "Encounter with encounter_class = 'emergency'."
+  obese: "Latest bmi >= 30."
+
+ambiguous_terms:   # the router should ask a clarifying question for these
+  - "'sick', 'high risk', 'bad', 'high readings' without a measure or threshold"
+  - "'recent' without a time window"

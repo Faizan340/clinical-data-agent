@@ -1,0 +1,12 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+langgraph>=0.2
+google-genai>=1.0
+psycopg[binary]>=3.2
+redis>=5.0
+pydantic>=2.7
+python-dotenv>=1.0
+pyyaml>=6.0
+sqlglot>=25.0
+tenacity>=8.2
+pytest>=8.0,<9   # pytest 9.2 crashes at startup on Python 3.10
